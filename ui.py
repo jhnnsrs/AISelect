@@ -4,8 +4,10 @@ from datetime import time, datetime
 
 from bioimage import *
 from PyQt5 import QtGui
+
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QFileDialog, QVBoxLayout, QPushButton, QWidget, QApplication, QLineEdit, QLabel, QGroupBox, \
-    QHBoxLayout, QGridLayout, QMessageBox, QTableWidget, QTableWidgetItem
+    QHBoxLayout, QGridLayout, QMessageBox, QTableWidget, QTableWidgetItem, QSlider
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import LassoSelector
@@ -224,6 +226,8 @@ class SettingsWindow(QWidget):
         Global.flags = flags
 
 
+
+
     def fileLoaded(self):
         # Now newest Part of Layout should be Loaded
         if self.selectB4 == None:
@@ -235,10 +239,25 @@ class SettingsWindow(QWidget):
 
             self.aissettingLayout.addWidget(self.b4Label,0,0)
             self.aissettingLayout.addWidget(self.selectB4,0,1)
+
+            self.thresholdLabel = QLabel("Threshold")
+            self.sl = QSlider(Qt.Horizontal)
+            self.sl.setMinimum(0)
+            self.sl.setMaximum(100)
+            self.sl.setValue(20)
+            self.sl.valueChanged.connect(self.thresholdchanged)
+            self.aissettingLayout.addWidget(self.thresholdLabel,1,0)
+            self.aissettingLayout.addWidget(self.sl,1,1)
+
+
             self.aisBox.setLayout(self.aissettingLayout)
 
             self.layout.addWidget(self.aisBox)
             self.setLayout(self.layout)
+
+    def thresholdchanged(self,value):
+        Global.threshold = float(value/100)
+        print(Global.threshold)
 
     def done(self):
 
