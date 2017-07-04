@@ -54,6 +54,7 @@ class RoiListWindow(QWidget):
             self.lastit = it
 
     def roiitemclicked(self,item):
+        if item == None: return
         it = item.text().split(" ")
         if len(it) > 1:
             dataindex = [i for i, data in enumerate(Global.datalist) if data.index == int(item.text().split(" ")[1])][0] #should be catched
@@ -61,7 +62,11 @@ class RoiListWindow(QWidget):
                 Global.handler.showData(dataindex)
                 self.lastit = dataindex
 
+    def roiitemchanged(self,current,previous):
+        self.roiitemclicked(current)
+
     def updateUI(self):
-        self.listWidget.itemClicked.connect(self.roiitemclicked)
+        #self.listWidget.itemClicked.connect(self.roiitemclicked)
+        self.listWidget.currentItemChanged.connect(self.roiitemchanged)
         #self.listWidget.itemDoubleClicked.connect(self.roiitemdoubleclicked)
         # DISPLAY META
