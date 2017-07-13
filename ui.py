@@ -75,7 +75,9 @@ class Handler(object):
             Global.settingsWindow.selectB4.selectItem(index)
 
     def setStack(self,level):
-        Global.bioImageFile
+        #Global.bioImageFile
+        pass
+
     def reset(self):
 
         Global.bioImageFile = None
