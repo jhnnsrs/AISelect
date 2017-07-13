@@ -165,6 +165,23 @@ class BioImageFile(object):
         assert (self.ran == True), "BioimageFile has no been instatiated"
         return self.file[:, :, :, :, t]
 
+    def getSlicedStack(self,slices,level, t=0):
+        seq = range(self.c)
+
+        def chunkIt(seq, num):
+            avg = len(seq) / float(num)
+            out = []
+            last = 0.0
+
+            while last < len(seq):
+                out.append(seq[int(last):int(last + avg)])
+                last += avg
+
+            return out
+
+        sliced = chunkIt(seq,slice)
+
+
     def readFile(self):
 
         assert (self.ran == True), "BioimageFile has no been instatiated"

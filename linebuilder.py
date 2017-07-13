@@ -12,6 +12,9 @@ class LineBuilder(object):
 
     def __init__(self, ax, fig, img):
 
+        self.minimumLevel = 0
+        self.maximumLevel = Global.meta.sizec
+        self.level = int(self.minimumLevel + self.maximumLevel / 2)
         self.fig = fig
         self.img = img
 
@@ -19,6 +22,7 @@ class LineBuilder(object):
 
         self.roicount = 0
         self.roi = None
+
 
         # TODO: this should be outside
         self.ax = ax
@@ -39,6 +43,7 @@ class LineBuilder(object):
         self.cid = fig.canvas.mpl_connect('button_press_event', self.on_pressevent)
         self.cidrelease = fig.canvas.mpl_connect('button_release_event', self.on_release)
         self.cidmotion = fig.canvas.mpl_connect('motion_notify_event', self.on_motion)
+        self.cidscroll = fig.canvas.mpl_connect('scroll_event',self.on_scroll)
         self.cid2 = fig.canvas.mpl_connect('key_press_event', self.on_keyevent)
 
     def setImageCallback(self, callback):
@@ -77,6 +82,16 @@ class LineBuilder(object):
         patch = self.ax.add_patch(patch)
         self.roi.patcheslink.append(patch)
         self.fig.canvas.update()
+
+    def on_scroll(self,event):
+        if event.button == "up":
+            if self.level < self.maximumLevel:
+                self.level += 1
+        if event.button == "down":
+            if self.level < self.minimumLevel:
+                self.level -= 1
+
+        Global.handler.setStack(self.level)
 
     def on_motion(self, event):
         if self.locked: return
