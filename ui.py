@@ -230,7 +230,7 @@ class SettingsWindow(QWidget):
         # Now newest Part of Layout should be Loaded
         if self.selectB4 == None:
             self.selectB4 = B4Selector()
-            self.b4Label = QLabel("b4-Spectrin Channel")
+            self.b4Label = QLabel("AIS-Channel")
 
             self.aisBox = QGroupBox("AIS-Settings")
             self.aissettingLayout = QGridLayout()
@@ -246,7 +246,7 @@ class SettingsWindow(QWidget):
 
         path, file = os.path.split(Global.filepath)
         data = Global.meta.getFileName()
-        data = (data[:75] + '-') if len(data) > 75 else data
+        data = (data[:115] + '-') if len(data) > 115 else data
         Global.dirname = path + "/" + "AIS " + data
         print(Global.dirname)
 
@@ -280,7 +280,7 @@ class SettingsWindow(QWidget):
         comments = Global.metaWindow.table.item(0,1).text()
         print(comments)
         data = Global.meta.getFileName()
-        data = (data[:75] + '-') if len(data) > 75 else data
+        data = (data[:115] + '-') if len(data) > 115 else data
         filename = data + ".h5"
         timestamp = "T".join( str( datetime.now() ).split() )
 
