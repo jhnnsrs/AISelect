@@ -64,7 +64,7 @@ class RoiListWindow(QWidget):
 
     def roiitemchanged(self,current,previous):
         self.roiitemclicked(current)
-        #placeholder
+        #placeholder2
 
     def updateUI(self):
         #self.listWidget.itemClicked.connect(self.roiitemclicked)
