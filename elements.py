@@ -212,7 +212,7 @@ class RoiParser(object):
         data.b4channel = environment.aischannel
         data.vectorlength = roi.totalwidth
 
-        print(roi.roiimage.shape)
+        #print(roi.roiimage.shape)
         height = data.picheight
 
         middleup = int(height / 2 - 3)
@@ -221,7 +221,7 @@ class RoiParser(object):
         bild = data.roiimage[middleup:middledown, :, :]
 
         np.seterr(divide='ignore', invalid='ignore') # TODO: FREE THE CUPRIT
-        print(roi.totalwidth,data.piclength)
+        #print(roi.totalwidth,data.piclength)
         averages = np.max(bild, axis=0)
         intensity = averages / averages.max(axis=0)
 
@@ -246,6 +246,7 @@ class RoiParser(object):
         data.aisend = ystart
         data.aislength = ystart - xstart
         data.aisphysicallength = data.aislength * float(physizex)
+        print(data.aislength,physizex,data.aisphysicallength)
         data.threshold = threshold
 
 

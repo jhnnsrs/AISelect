@@ -23,8 +23,8 @@ class BioMeta(object):
         # self.physicalsizet = float(image.find("Pixels").attrs[""])
         self.physicalsizex = 1
         self.physicalsizey = 1
-        self.physicalsizexunit = "um"
-        self.physicalsizeyunit = "um"
+        self.physicalsizexunit = "mm"
+        self.physicalsizeyunit = "mm"
 
         if standalone: javabridge.start_vm(class_path=bioformats.JARS)
 
@@ -64,8 +64,8 @@ class BioMeta(object):
             self.sizec = int(image.find("Pixels").attrs["SizeC"]) if image.find("Pixels").attrs["SizeC"] is not None else 0
 
             # self.physicalsizet = float(image.find("Pixels").attrs[""])
-            self.physicalsizex = float(image.find("Pixels").attrs["PhysicalSizeX"])/self.sizex if image.find("Pixels").attrs["PhysicalSizeX"] is not None else 1
-            self.physicalsizey = float(image.find("Pixels").attrs["PhysicalSizeY"])/self.sizey if image.find("Pixels").attrs["PhysicalSizeY"] is not None else 1
+            self.physicalsizex = float(image.find("Pixels").attrs["PhysicalSizeX"]) if image.find("Pixels").attrs["PhysicalSizeX"] is not None else 1
+            self.physicalsizey = float(image.find("Pixels").attrs["PhysicalSizeY"]) if image.find("Pixels").attrs["PhysicalSizeY"] is not None else 1
             self.physicalsizexunit = image.find("Pixels").attrs["PhysicalSizeXUnit"] if image.find("Pixels").attrs["PhysicalSizeXUnit"] is not None else "Pixels"
             self.physicalsizeyunit = image.find("Pixels").attrs["PhysicalSizeYUnit"] if image.find("Pixels").attrs["PhysicalSizeYUnit"] is not None else "Pixels"
         except:
