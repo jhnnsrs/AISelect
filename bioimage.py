@@ -209,10 +209,22 @@ class BioImageFile(object):
                             im2 = im1
                         if (self.meta.sizex == im2.shape[1]) and (self.meta.sizey == im2.shape[0]):
                             # x and y are swapped
-                            im3 = im2.transpose()
+                            #logging.warning("Image might be transposed. Not Swapping")
+                            #im3 = im2.transpose()
+                            im3 = im2
                         else:
                             im3 = im2
+
+
                         self.file[:, :, c, z, t] = im3
+
+
+
+        #needs to check if image is in rgb format to display
+        if self.file.shape[2] != 3:
+            newfile = np.zeros((self.file.shape[0],self.file.shape[1],3,self.file.shape[3],self.file.shape[4]))
+            newfile[:,:,:2,:,:] = self.file
+            self.file = newfile
 
         return self.file
 
