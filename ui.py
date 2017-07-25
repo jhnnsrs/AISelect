@@ -178,7 +178,7 @@ class SettingsWindow(QWidget):
 
     def __init__(self,filepath=None,series=None,meta = None,debug=False):
         super(SettingsWindow,self).__init__()
-        self.setWindowTitle("AISelect v.1a")
+        self.setWindowTitle("AISelect v.1.2a")
         self.filepath = filepath
         Global.settingsWindow = self
         Global.postprocess = postprocess.void

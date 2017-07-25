@@ -201,7 +201,7 @@ class RoiParser(object):
         pass
 
     @staticmethod
-    def parseRoi(roi: Roi,meta: BioMeta = Global.meta, environment = Global):
+    def parseRoi(roi: Roi, meta: BioMeta = Global.meta, environment = Global):
 
 
         data = AcquiredData()
