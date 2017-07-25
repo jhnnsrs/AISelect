@@ -23,7 +23,7 @@ class Roi(object):
         self.img = None
         self.boxes = [] #Should if handled correctly always be length self.vectors - 1
         self.patcheslink = []
-        self.nchannels = 3 #used to be from Meta, but pictures are always with 3 channels TODO: prettify
+        self.nchannels = 3 #used to be from Meta, but pictures are always with 3 channels
 
 
         if self.roiimage == None:
