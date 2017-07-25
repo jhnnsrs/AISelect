@@ -267,7 +267,7 @@ class SettingsWindow(QWidget):
 
         path, file = os.path.split(Global.filepath)
         data = Global.meta.getFileName()
-        data = (data[:115] + '-') if len(data) > 115 else data
+        data = (data[:115] + '-') if len(data) > 115 else data #TODO: Create clean Filename according to convention
         Global.dirname = path + "/" + "AIS " + data
         print(Global.dirname)
 
@@ -275,22 +275,42 @@ class SettingsWindow(QWidget):
             os.mkdir(Global.dirname)
 
 
-        excelfile = []
         for data in Global.datalist:
                 face_file_name = "AIS " + "{0:0=3}".format(data.index) + ".jpg"
-                excelfile += [
-
-                    data.index,data.aislength,data.aisphysicallength,data.piclength]
                 path = os.path.join(Global.dirname, face_file_name)
                 plt.imsave(path, data.roiimage)
 
 
-
-        df = pd.DataFrame(excelfile)
-        path = os.path.join(Global.dirname, "AIS lengths.csv")
-        df.to_csv(path)
-
         self.saveHDF5()
+        self.saveExcel()
+
+    def saveExcel(self):
+        from openpyxl import Workbook
+        wb = Workbook()
+
+        # grab the active worksheet
+        ws = wb.active
+
+        # Data can be assigned directly to cells
+        ws['A1'] = "AIS Index"
+        ws['B1'] = "Length in Pixel"
+        ws['C1'] = "Physical Length"
+        ws['D1'] = "Picture Length"
+        ws['E1'] = "Vector Length"
+        ws['F1'] = "Loss"
+
+        for data in Global.datalist:
+                face_file_name = "AIS " + "{0:0=3}".format(data.index) + ".jpg"
+                pixellength = data.aislength
+                physicallength = data.aisphysicallength
+                picturelength = data.piclength
+                vectorlength = data.vectorlength
+                ws.append([face_file_name, pixellength, physicallength,picturelength,vectorlength,picturelength/vectorlength])
+
+
+        # Save the file
+        filepath = os.path.join(Global.dirname, "AIS lengths.xlsx")
+        wb.save(filepath)
 
 
     def saveHDF5(self):
@@ -299,6 +319,7 @@ class SettingsWindow(QWidget):
         gantib = Global.metaWindow.table.item(4,1).text()
         bantib = Global.metaWindow.table.item(5,1).text()
         comments = Global.metaWindow.table.item(0,1).text()
+        date = Global.metaWindow.table.item(1,1).text()
         print(comments)
         data = Global.meta.getFileName()
         data = (data[:115] + '-') if len(data) > 115 else data
@@ -316,7 +337,7 @@ class SettingsWindow(QWidget):
         f.attrs["physicalsizey"] = Global.meta.physicalsizey
         f.attrs["physicalsizexunit"] = Global.meta.physicalsizexunit
         f.attrs["physicalsizeyunit"] = Global.meta.physicalsizexunit
-        f.attrs["Image-timestamp"] = Global.meta.date
+        f.attrs["Image-timestamp"] = date
         f.attrs['creator'] = 'AISelect 1.0'
         f.attrs['script_version'] = '1.1b'
         f.attrs['HDF5_Version'] = h5py.version.hdf5_version
