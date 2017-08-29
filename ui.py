@@ -297,7 +297,7 @@ class SettingsWindow(QWidget):
         ws['C1'] = "Physical Length"
         ws['D1'] = "Picture Length"
         ws['E1'] = "Vector Length"
-        ws['F1'] = "Losss"
+        ws['F1'] = "Loss"
 
         for data in Global.datalist:
                 face_file_name = "AIS " + "{0:0=3}".format(data.index) + ".jpg"
