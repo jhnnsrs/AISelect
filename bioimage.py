@@ -141,11 +141,11 @@ class BioImageFile(object):
         return self
 
     def getFile(self):
-        assert (self.ran == True), "BioimageFile has no been instatiated"
+        assert (self.ran is True), "BioimageFile has no been instatiated"
         return self.file
 
     def getImage(self, z=0, t=0):
-        assert (self.ran == True), "BioimageFile has no been instatiated"
+        assert (self.ran is True), "BioimageFile has no been instatiated"
         #TODO: THIs is to dirty and needs invastigating
         image = self.file[:, :, :, z, t]
         import scipy.misc
@@ -179,12 +179,12 @@ class BioImageFile(object):
 
             return out
 
-        sliced = chunkIt(seq,slice)
+        sliced = chunkIt(seq, slice)
 
 
     def readFile(self):
 
-        assert (self.ran == True), "BioimageFile has no been instatiated"
+        assert (self.ran is True), "BioimageFile has no been instatiated"
 
         self.file = np.zeros((self.meta.sizex, self.meta.sizey, self.meta.sizec, self.meta.sizez, self.meta.sizet))
 
@@ -222,8 +222,8 @@ class BioImageFile(object):
 
         #needs to check if image is in rgb format to display
         if self.file.shape[2] != 3:
-            newfile = np.zeros((self.file.shape[0],self.file.shape[1],3,self.file.shape[3],self.file.shape[4]))
-            newfile[:,:,:2,:,:] = self.file
+            newfile = np.zeros((self.file.shape[0], self.file.shape[1], 3, self.file.shape[3], self.file.shape[4]))
+            newfile[:, :, 1:3, :, :] = self.file
             self.file = newfile
 
         return self.file
