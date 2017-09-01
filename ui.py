@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import QFileDialog, QVBoxLayout, QPushButton, QWidget, QApp
 import numpy as np
 import matplotlib.pyplot as plt
 
+from randcolours import rand_cmap
 from settings import Global
 from linebuilder import LineBuilder
 from roilist import RoiListWindow
@@ -81,7 +82,7 @@ class Handler(object):
 
 
     def reset(self):
-
+        Global.colours = iter((rand_cmap(200)(np.linspace(0, 1, 200))))
         Global.bioImageFile = None
         Global.meta = None
         Global.datalist = []
@@ -503,10 +504,11 @@ class SettingsWindow(QWidget):
         f.attrs["G-Antibody"] = gantib
         f.attrs["B-Antibody"] = bantib
         f.attrs["Comments"] = comments
-        f.create_dataset("BioImage",data=Global.image)
+        f.create_dataset("BioImage",data=Global.projected)
 
         roisgroup = f.create_group('ROIs')
         for roi in Global.roilist:
+            print("ROI SAVED")
             roigroup = roisgroup.create_group("Roi " + str(roi.index))
             roigroup.create_dataset("Vectors",data=roi.vectors)
             roigroup.create_dataset("Image",data=roi.roiimage)
