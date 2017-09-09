@@ -79,7 +79,7 @@ class BioMeta(object):
 
     def getChannelNames(self):
 
-        channelexplain = ["R", "G", "B", "A", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+        channelexplain = Global.colorReadableMap
         try:
             channellist = [i.attrs["Name"]+" (" + channelexplain[index]+ ")" for index,i in enumerate(self.allmetadata[self.series].findAll("Channel"))]
             return channellist
@@ -140,10 +140,6 @@ class BioImageFile(object):
 
         return self
 
-    def getFile(self):
-        assert (self.ran is True), "BioimageFile has no been instatiated"
-        return self.file
-
     def getImage(self, z=0, t=0):
         assert (self.ran is True), "BioimageFile has no been instatiated"
         #TODO: THIs is to dirty and needs invastigating
@@ -163,23 +159,15 @@ class BioImageFile(object):
 
     def getZStack(self, t=0):
         assert (self.ran == True), "BioimageFile has no been instatiated"
-        return self.file[:, :, :, :, t]
+        file = self.getFile()
+        return file[:, :, :, :, t]
 
-    def getSlicedStack(self,slices,level, t=0):
-        seq = range(self.c)
+    def getZSize(self):
+        return self.meta.sizez
 
-        def chunkIt(seq, num):
-            avg = len(seq) / float(num)
-            out = []
-            last = 0.0
-
-            while last < len(seq):
-                out.append(seq[int(last):int(last + avg)])
-                last += avg
-
-            return out
-
-        sliced = chunkIt(seq, slice)
+    def getSlicedStack(self,start,end, t=0):
+        file = self.getFile()
+        return file[:,:,:,start:end,t]
 
 
     def readFile(self):
@@ -221,12 +209,43 @@ class BioImageFile(object):
 
 
         #needs to check if image is in rgb format to display
-        if self.file.shape[2] != 3:
-            newfile = np.zeros((self.file.shape[0], self.file.shape[1], 3, self.file.shape[3], self.file.shape[4]))
-            newfile[:, :, 1:3, :, :] = self.file
-            self.file = newfile
+
+
+    def colorMap(self,map):
+
+        emptyfile = np.zeros(self.file.shape)
+
+        if len(map) != self.file.shape[2]:
+            map = map[:self.file.shape[2]]
+            print("Less then 3 Channels, try different mapping")
+
+        for index, mappedchannel in enumerate(map):
+            emptyfile[:,:,index,:,:] = self.file[:,:,mappedchannel,:,:]
+
+        return emptyfile
+
+    def checkDimensions(self,file):
+        # unnecessary step
+
+        if file.shape[2] != 3:
+            newfile = np.zeros((file.shape[0], file.shape[1], 3, file.shape[3], file.shape[4]))
+            newfile[:, :, 1:3, :, :] = file
+            file = newfile
+
+
+        assert self.file.shape[2] == 3, "File Dimensions are wrong"
 
         return self.file
+
+
+    def getFile(self):
+
+        print(Global.colorMap)
+        self.mappedfile = self.colorMap(Global.colorMap)
+       # self.checkedfile = self.checkDimensions(self.mappedfile)
+
+        return self.mappedfile
+
 
     def getMeta(self):
 

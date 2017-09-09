@@ -11,6 +11,7 @@ from bioimage import BioMeta
 class Roi(object):
 
     def __init__(self,roindex):
+        self.newLabelCallback = None
         self.flags = []
         self.inputvectors = []
         self.index = roindex
@@ -20,11 +21,13 @@ class Roi(object):
         self.totalwidth = 0
         self.roiimage = None
         self.scale = 10
+        self.colour = next(Global.colours)
         self.img = None
         self.boxes = [] #Should if handled correctly always be length self.vectors - 1
         self.patcheslink = []
         self.nchannels = 3 #used to be from Meta, but pictures are always with 3 channels TODO: prettify
 
+        print("THE COLOUR IS",self.colour)
 
         if self.roiimage == None:
             width = 0
@@ -39,6 +42,8 @@ class Roi(object):
         '''Returns newly creaty Box'''
         self.newBoxCallback = callback
 
+    def setNewLaberCallback(self,callback):
+        self.newLabelCallback = callback
     def setRoiCallback(self,callback):
         self.roiCallback = callback
 
@@ -149,15 +154,21 @@ class Roi(object):
         self.boxes.append(self._getBoxDim(self.nvectors-2)) #still uglys
 
 
-        if self.newBoxCallback: self.newBoxCallback(self.boxes[-1])
+        if self.newBoxCallback: self.newBoxCallback(self.boxes[-1], tuple(self.colour))
 
-    def calculateImage(self,image = Global.image):
+    def calculateImage(self,image = Global.projected):
         self.bioimage = image
+        boxlength = len(self.boxes)
+        called = False
 
-        for box in self.boxes:
+        for i,box in enumerate(self.boxes):
             verts, width = box
             newpicture = self._getTranslatedPicture(verts)
             self.addToRoiImage(newpicture)
+            # might not be the right spot but fuck it
+            if i > boxlength/2 and not called:
+                if self.newLabelCallback: self.newLabelCallback(verts)
+                called = True
 
 
         self.bioimage = None
@@ -181,6 +192,10 @@ class AcquiredData(object):
             self.threshold = 0
             self.method = "MinMax-Search"
             self.vectorlength = 0
+            self.colour = ""
+
+            self.stagestart = 0
+            self.stageend = 0
 
             self.roiimage = None
             self.intensitycurves = [] #shape (length,values,amountchannels)
@@ -208,9 +223,12 @@ class RoiParser(object):
         data.piclength = roi.roiimage.shape[1]
         data.picheight = roi.roiimage.shape[0]
         data.roiimage = roi.roiimage
+        data.colour = roi.colour
         data.index = roi.index
         data.b4channel = environment.aischannel
         data.vectorlength = roi.totalwidth
+        data.stagestart = environment.startstack
+        data.stageend = environment.endstack
 
         #print(roi.roiimage.shape)
         height = data.picheight

@@ -1,17 +1,15 @@
+import random
 import sys
-from datetime import time, datetime
+from datetime import datetime
 
 
 from bioimage import *
-from PyQt5 import QtGui
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QFileDialog, QVBoxLayout, QPushButton, QWidget, QApplication, QLineEdit, QLabel, QGroupBox, \
-    QHBoxLayout, QGridLayout, QMessageBox, QTableWidget, QTableWidgetItem, QSlider
+    QHBoxLayout, QGridLayout, QMessageBox, QTableWidget, QTableWidgetItem, QSlider, QMainWindow, QDockWidget
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.widgets import LassoSelector
-from matplotlib import path
 
 from settings import Global
 from linebuilder import LineBuilder
@@ -21,14 +19,16 @@ import projections, postprocess
 from elements import CallbackSelector, Roi, RoiParser, AcquiredData
 import matplotlib
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-#metadata = Metadata()
 
-matplotlib.use('Qt5Agg')
 import os
 
 import h5py
 
 import pandas as pd
+
+
+#Initialize QT5
+matplotlib.use('Qt5Agg')
 
 
 
@@ -40,7 +40,7 @@ class ProjectionsSelector(CallbackSelector):
 
     def setCallback(self,callback):
         Global.projection = callback
-        Global.imageWindow.displayImage()
+        Global.imageWindow.loadImage()
 
 class PostProcessSelector(CallbackSelector):
 
@@ -51,7 +51,7 @@ class PostProcessSelector(CallbackSelector):
 
     def setCallback(self,callback):
         Global.postprocess = callback
-        Global.imageWindow.displayImage()
+        Global.handler.loadImage()
 
 
 class Handler(object):
@@ -64,21 +64,21 @@ class Handler(object):
         self.reset()
 
         self.loadBioImage(Global.filepath)
-        self.loadImage()
         self.loadMeta()
+        self.loadImage()
 
         Global.settingsWindow.fileLoaded()
-        Global.imageWindow.displayImage()
+        Global.handler.loadImage()
         Global.metaWindow.updateUI()
-
-    def setB4Channel(self,index):
-        Global.aischannel = index
-        if Global.settingsWindow.selectB4 != None:
-            Global.settingsWindow.selectB4.selectItem(index)
 
     def setStack(self,level):
         #Global.bioImageFile
         pass
+
+    def reloadChannelSelector(self):
+        if Global.settingsWindow.selectB4 != None:
+            Global.settingsWindow.selectB4 = B4Selector()
+
 
     def reset(self):
 
@@ -87,14 +87,26 @@ class Handler(object):
         Global.datalist = []
         Global.roilist = []
 
+        if Global.imageWindow.lineBuilder != None:
+            Global.imageWindow.lineBuilder.reset() #ahh soooo dirty
         Global.roiListWindow.listUpdated()
+        Global.settingsWindow.deleteStageLayout()
 
     def loadBioImage(self,filepath):
         Global.bioImageFile = BioImageFile(Global.filepath)
         Global.bioImageFile.setSeries(Global.series).run()
 
     def loadImage(self):
-        Global.image = Global.projection(Global.bioImageFile.getZStack())
+        Global.image = Global.bioImageFile.getSlicedStack(Global.startstack,Global.endstack)
+        Global.projected = Global.projection(Global.image)
+        Global.postprocessed = Global.postprocess(Global.projected)
+
+        print(Global.postprocessed.shape)
+
+        Global.imageWindow.displayImage(Global.postprocessed)
+        # QMessageBox.about(Global.settingsWindow, "Error", "Please select file first")
+
+        Global.handler.reloadChannelSelector()
 
     def loadMeta(self,filepath = None):
         if filepath is None:
@@ -104,6 +116,8 @@ class Handler(object):
             Global.meta = BioMeta(Global.filepath)
 
         Global.filename = Global.meta.getFileName
+        Global.startstack = 0
+        Global.endstack = Global.meta.sizez - 1
 
 
     def roiAddedToList(self,roi):
@@ -144,16 +158,9 @@ class Handler(object):
     def showData(self,dataindex):
         Global.roiWindow.showData(Global.datalist[dataindex])
 
-    def update(self):
-        pass
-        #TODO: Tiff file handling
-        #Global.image = plt.imread() if this is a tiff file
-
     def addRoi(self,roi: Roi):
         Global.roilist.append(roi)
         self.roiAddedToList(roi)
-
-
 
     def setMetaWindow(self):
         Global.metaWindow.updateUI()
@@ -173,23 +180,44 @@ class B4Selector(CallbackSelector):
     def setCallback(self,callback):
         Global.aischannel = callback
 
+class MapSelector(CallbackSelector):
+
+    def itemsToAdd(self):
+        channelMaps = Global.availableReadableMaps
+        for index, i in enumerate(channelMaps):
+            self.newItem(("").join(i) + " to RGB",index)
+
+
+    def selectItem(self,index):
+        self.setCurrentIndex(index)
+
+    def setCallback(self,callback):
+        Global.colorMap = Global.availableMaps[callback]
+        Global.handler.loadImage()
+
+
+
 
 class SettingsWindow(QWidget):
 
     def __init__(self,filepath=None,series=None,meta = None,debug=False):
         super(SettingsWindow,self).__init__()
-        self.setWindowTitle("AISelect v.1.2a")
+        self.setWindowTitle("AISelect")
         self.filepath = filepath
         Global.settingsWindow = self
         Global.postprocess = postprocess.void
         Global.projection = projections.maxisp
         self.selectB4 = None
+        self.stageBox = None
+        self.lineBuilder = None
 
         self.layout = QVBoxLayout(self)
 
         self.setUI()
 
     def setUI(self):
+
+        print(next(Global.colours))
 
         self.changefilebutton = QPushButton('Change File')
         self.flagslabel = QLabel("Flags")
@@ -206,6 +234,9 @@ class SettingsWindow(QWidget):
         self.projectionlabel = QLabel("Projection")
         self.selectProjection = ProjectionsSelector()
 
+        self.mappinglabel = QLabel("ColorMapping")
+        self.selectMap = MapSelector()
+
 
         self.layout.addWidget(self.changefilebutton)
 
@@ -217,6 +248,8 @@ class SettingsWindow(QWidget):
         self.settingLayout.addWidget(self.selectProjection,1,1)
         self.settingLayout.addWidget(self.postprocesslabel,2,0)
         self.settingLayout.addWidget(self.selectPostProcess,2,1)
+        self.settingLayout.addWidget(self.mappinglabel,3,0)
+        self.settingLayout.addWidget(self.selectMap,3,1)
         self.settingBox.setLayout(self.settingLayout)
 
         self.layout.addWidget(self.settingBox)
@@ -228,6 +261,125 @@ class SettingsWindow(QWidget):
         text = self.textbox.text()
         flags = text.split(";")
         Global.flags = flags
+
+    def addStageLayout(self):
+        self.stageBox = QGroupBox("Stage")
+        self.stageLayout = QGridLayout()
+
+        self.minimumbox = QLineEdit(self)
+        self.minimumbox.setText(str(Global.startstack))
+        self.minimumlabel = QLabel("Min")
+        self.minimumslider = QSlider(Qt.Horizontal)
+        self.minimumslider.setMinimum(0)
+        self.minimumslider.setMaximum(Global.meta.sizez-1)
+        self.minimumslider.setValue(0)
+        self.minimumslider.valueChanged.connect(self.minimumchanged)
+        self.minimumbox.textChanged.connect(self.minimumchanged)
+        self.stageLayout.addWidget(self.minimumlabel, 0, 0)
+        self.stageLayout.addWidget(self.minimumslider,1,0)
+        self.stageLayout.addWidget(self.minimumbox, 1, 1)
+
+        self.maximumbox = QLineEdit(self)
+        self.maximumbox.setText(str(Global.endstack))
+        self.maximumlabel = QLabel("Max")
+        self.maximumslider = QSlider(Qt.Horizontal)
+        self.maximumslider.setMinimum(0)
+        self.maximumslider.setMaximum(Global.meta.sizez-1)
+        self.maximumslider.setValue(Global.meta.sizez-1)
+        self.maximumslider.valueChanged.connect(self.maximumchanged)
+        self.maximumbox.textChanged.connect(self.maximumchanged)
+        self.stageLayout.addWidget(self.maximumlabel, 2, 0)
+        self.stageLayout.addWidget(self.maximumslider,3,0)
+        self.stageLayout.addWidget(self.maximumbox, 3, 1)
+
+        self.snapshotButton = QPushButton("Snapshot Stage")
+        self.snapshotButton.clicked.connect(self.snapshotStage)
+        self.stageLayout.addWidget(self.snapshotButton,4,0)
+
+        self.snapshotAISButton = QPushButton("Snapshot AIS")
+        self.snapshotAISButton.clicked.connect(self.snapshotAIS)
+        self.stageLayout.addWidget(self.snapshotAISButton, 4, 1)
+
+        self.stageBox.setLayout(self.stageLayout)
+        self.layout.addWidget(self.stageBox)
+
+        self.setLayout(self.layout)
+
+    def deleteStageLayout(self):
+        if self.stageBox != None:
+            import sip
+            self.layout.removeWidget(self.stageBox)
+            sip.delete(self.stageBox)
+            self.setLayout(self.layout)
+            self.stageBox = None
+
+    def minimumchanged(self, value):
+        try:
+            value = int(value)
+        except ValueError:
+            value = 0
+
+        if value != Global.startstack and 0 < value < Global.meta.sizez:
+            Global.startstack = value
+
+            if Global.startstack >= Global.endstack:
+                Global.startstack = Global.endstack - 1
+
+            self.minimumslider.setValue(Global.startstack)
+            self.minimumbox.setText(str(Global.startstack))
+            Global.handler.loadImage()
+
+    def maximumchanged(self, value):
+        try:
+            value = int(value)
+        except ValueError:
+            value = Global.meta.sizez
+
+
+        if value != Global.endstack and 0 < value < Global.meta.sizez:
+            Global.endstack = value
+
+            if Global.startstack >= Global.endstack:
+                Global.endstack = Global.startstack + 1
+
+            self.maximumslider.setValue(Global.endstack)
+            self.maximumbox.setText(str(Global.endstack))
+            Global.handler.loadImage()
+
+
+    def snapshotStage(self, *args):
+
+        path, file = os.path.split(Global.filepath)
+        data = Global.meta.getFileName()
+        data = (data[:115] + '-') if len(data) > 115 else data  # TODO: Create clean Filename according to convention
+        dirname = path + "/" + "STAGES " + data
+        print(dirname)
+
+        if not os.path.exists(dirname):
+            os.mkdir(dirname)
+
+        face_file_name = "STAGE_" + data +  "_stage-{0}-{1}".format(Global.startstack,Global.endstack) + ".jpg"
+        path = os.path.join(dirname, face_file_name)
+        plt.imsave(path, Global.projected,  dpi=600)
+        print("Snapshot saved")
+
+
+    def snapshotAIS(self, *args):
+        path, file = os.path.split(Global.filepath)
+        data = Global.meta.getFileName()
+        data = (data[:115] + '-') if len(data) > 115 else data  # TODO: Create clean Filename according to convention
+        dirname = path + "/" + "STAGES " + data
+        print(dirname)
+
+        if not os.path.exists(dirname):
+            os.mkdir(dirname)
+
+        face_file_name = "AIS-STAGE_" + data + "_stage-{0}-{1}".format(Global.startstack, Global.endstack) + ".jpg"
+        path = os.path.join(dirname, face_file_name)
+
+        Global.imageWindow.fig.savefig(path, dpi=600)
+        print("Snapshot saved")
+
 
 
 
@@ -245,19 +397,21 @@ class SettingsWindow(QWidget):
             self.aissettingLayout.addWidget(self.selectB4,0,1)
 
             self.thresholdLabel = QLabel("Threshold")
-            self.sl = QSlider(Qt.Horizontal)
-            self.sl.setMinimum(0)
-            self.sl.setMaximum(100)
-            self.sl.setValue(20)
-            self.sl.valueChanged.connect(self.thresholdchanged)
+            self.minimumslider = QSlider(Qt.Horizontal)
+            self.minimumslider.setMinimum(0)
+            self.minimumslider.setMaximum(100)
+            self.minimumslider.setValue(20)
+            self.minimumslider.valueChanged.connect(self.thresholdchanged)
             self.aissettingLayout.addWidget(self.thresholdLabel,1,0)
-            self.aissettingLayout.addWidget(self.sl,1,1)
+            self.aissettingLayout.addWidget(self.minimumslider, 1, 1)
 
 
             self.aisBox.setLayout(self.aissettingLayout)
 
             self.layout.addWidget(self.aisBox)
             self.setLayout(self.layout)
+        if self.stageBox == None:
+            self.addStageLayout()
 
     def thresholdchanged(self,value):
         Global.threshold = float(value/100)
@@ -280,9 +434,12 @@ class SettingsWindow(QWidget):
                 path = os.path.join(Global.dirname, face_file_name)
                 plt.imsave(path, data.roiimage)
 
+        print("AIS Pictures saved")
 
         self.saveHDF5()
         self.saveExcel()
+
+        QMessageBox.about(self, "Done", "Files have been successfully writen")
 
     def saveExcel(self):
         from openpyxl import Workbook
@@ -374,6 +531,9 @@ class SettingsWindow(QWidget):
             dataitem.attrs["Method"] =  data.parsingmethod
             dataitem.attrs["Flags"] = " , ".join(data.flags)
             dataitem.attrs["Comment"] = data.comment
+            dataitem.attrs["StageSTART"] = data.stagestart
+            dataitem.attrs["StageEND"] = data.stageend
+            dataitem.attrs["Colour"] = data.colour
             physicalgroup = dataitem.create_group("Physical")
             physicalgroup.attrs["AISPhysicalLength"] = data.aisphysicallength
 
@@ -384,9 +544,11 @@ class SettingsWindow(QWidget):
         #TODO: CLEAN UP ROUTINE
         Global.handler.cleanROIs()
         Global.filepath, _ = QFileDialog.getOpenFileName()
-        Global.handler.initRoutine()
+
         print(Global.filepath)
-        print(Global.dirname)
+        if Global.filepath != "":
+            Global.handler.initRoutine()
+            print(Global.dirname)
 
 class ImageWindow(QWidget):
 
@@ -396,12 +558,10 @@ class ImageWindow(QWidget):
         Global.imageWindow = self
         self.layout = QVBoxLayout(self)
 
+        self.lineBuilder = None
         self.fig = plt.figure()
         self.canvas = FigureCanvas(self.fig)
         self.imageCanvas = self.fig.add_subplot(111)
-
-
-
 
         self.setUI()
 
@@ -420,24 +580,24 @@ class ImageWindow(QWidget):
         self.layout.addWidget(self.canvas)
         self.setLayout(self.layout)
 
+
+
     def instatiateLineBuilder(self):
+        if self.lineBuilder == None:
+            self.lineBuilder = LineBuilder(self.imageCanvas,self.fig)
+            self.lineBuilder.setImageCallback(self.lineBuilt)
+            self.lineBuilder.setRoiCallback(Global.handler.addRoi)
 
-        self.lineBuilder = LineBuilder(self.imageCanvas,self.fig,Global.image)
-        self.lineBuilder.setImageCallback(self.lineBuilt)
-        self.lineBuilder.setRoiCallback(Global.handler.addRoi)
-
-    def displayImage(self):
-        try:
-            image = Global.image
-            print("BioImage Shape:", image.shape)
-            postprocessed =  Global.postprocess(image)
-            self.imageCanvas.imshow(postprocessed)
+    def displayImage(self,image):
+            self.figure = self.imageCanvas.imshow(image)
+            self.fig.tight_layout()
+            self.imageCanvas.axis("off")
+            self.figure.axes.get_xaxis().set_visible(False)
+            self.figure.axes.get_yaxis().set_visible(False)
             self.imageCanvas.set_xlim([0, image.shape[0]])
             self.imageCanvas.set_ylim([0, image.shape[1]])
             self.updateUI()
             self.instatiateLineBuilder()
-        except:
-            QMessageBox.about(self, "Error", "Please select file first")
 
 
 class RoiWindow(QWidget):
@@ -567,23 +727,62 @@ def my_exception_hook(exctype, value, traceback):
 # Set the exception hook to our wrapping function
 sys.excepthook = my_exception_hook
 
+class Dock(QWidget):
+
+    def __init__(self, parent=None):
+        super(Dock, self).__init__(parent)
+
+        self.meta = MetaWindow()
+        self.roilist = RoiListWindow()
+
+        self.docklayout = QVBoxLayout()
+        self.docklayout.addWidget(self.roilist)
+        self.docklayout.addWidget(self.meta)
+
+        self.setLayout(self.docklayout)
+
+
+
+class AISelect(QMainWindow):
+    def __init__(self, parent=None):
+        super(AISelect, self).__init__(parent)
+        bar = self.menuBar()
+        file = bar.addMenu("File")
+        file.addAction("New")
+
+        self.graph = RoiWindow()
+        self.dock = Dock()
+        self.lala = SettingsWindow()
+
+        self.roidock = QDockWidget("Graph and Flourescence", self)
+        self.leftdock = QDockWidget("RoiList and Meta ")
+
+        self.roidock.setWidget(self.graph)
+        self.roidock.setFloating(False)
+
+        self.leftdock.setWidget(self.dock)
+
+        self.addDockWidget(Qt.RightDockWidgetArea, self.roidock)
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.leftdock)
+        self.setCentralWidget(self.lala)
+
+        self.setWindowTitle("AISelect v.2a")
+
+
+
+
 
 if __name__ == '__main__':
 
     app = QApplication(sys.argv)
 
     handler = Handler()
-    lala = SettingsWindow()
-    image = ImageWindow()
-    roi = RoiWindow()
-    meta = MetaWindow()
-    roilist = RoiListWindow()
 
-    meta.show()
+    image = ImageWindow()
+    main = AISelect()
+
+    main.show()
     image.show()
-    roi.show()
-    roilist.show()
-    lala.show()
 
     try:
         sys.exit(app.exec_())

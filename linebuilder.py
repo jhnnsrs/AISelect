@@ -10,13 +10,13 @@ from settings import Global
 class LineBuilder(object):
     lock = None  # only one line can be build at a time
 
-    def __init__(self, ax, fig, img):
+    def __init__(self, ax, fig):
 
         self.minimumLevel = 0
         self.maximumLevel = Global.meta.sizec
         self.level = int(self.minimumLevel + self.maximumLevel / 2)
         self.fig = fig
-        self.img = img
+        self.img = Global.projected
 
         self.locked = False  # is set by other
 
@@ -26,14 +26,14 @@ class LineBuilder(object):
 
         # TODO: this should be outside
         self.ax = ax
-        self.ax.set_xlim([0, img.shape[0]])
-        self.ax.set_ylim([0, img.shape[1]])
+        self.ax.set_xlim([0, Global.projected.shape[0]])
+        self.ax.set_ylim([0, Global.projected.shape[1]])
 
         self.imageCallback = None
         self.roiCallback = None
 
         self.line = None
-        self.channels = img.shape[2]
+        self.channels = Global.projected.shape[2]
 
         self.lastvector = np.array([0, 0])
         self.lastdot = np.array([0, 0])
@@ -64,8 +64,15 @@ class LineBuilder(object):
         self.roi.setNewBoxCallback(self.drawBox)
         self.roi.setImageCallback(self.imageCallback)
         self.roi.setRoiCallback(self.roiCallback)
+        self.roi.setNewLaberCallback(self.labelCallback)
 
-    def drawBox(self, box):
+    def labelCallback(self,verts):
+
+        middleofbox = 0.5*verts[1] + 0.5*verts[3]
+        text = self.ax.text(middleofbox[0],middleofbox[1],self.roi.index,fontdict=Global.font, bbox=Global.bbox)
+        self.roi.patcheslink.append(text)
+
+    def drawBox(self, box, colour):
 
         verts, width = box
         vertices = verts + [[0, 0]]  # dummy
@@ -78,7 +85,10 @@ class LineBuilder(object):
 
         path = Path(vertices, codes)
 
-        patch = patches.PathPatch(path, facecolor='orange', lw=1)
+        patch = patches.PathPatch(path, lw=None)
+        patch.set_facecolor(colour)
+        patch.set_alpha(0.6)
+
         patch = self.ax.add_patch(patch)
         self.roi.patcheslink.append(patch)
         self.fig.canvas.update()
@@ -125,7 +135,7 @@ class LineBuilder(object):
             if len(self.roi.vectors) <= 1:
                 self.roicount -= 1
                 return #if accidently input was just pressed
-            self.roi.calculateImage(self.img)
+            self.roi.calculateImage(Global.projected)
             self.roi = None
 
         self.cleanUp()
@@ -141,3 +151,7 @@ class LineBuilder(object):
         print('press', event.key)
         if event.key == "i":
             self.locked = not self.locked
+
+
+    def reset(self):
+        self.roicount = 0
