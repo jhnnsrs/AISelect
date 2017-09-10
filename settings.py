@@ -18,6 +18,7 @@ class Global(object):
     endstack = None # needs to be set before anything
     font = {'family': 'sans-serif', 'color':  'black','weight': 'bold','size': 9}
     bbox = dict(boxstyle="circle,pad=0.2", fc="white", ec="white", lw=2, alpha=0.8)
+    saveVolumetricInfo = False
     colours = iter((rand_cmap(200)(np.linspace(0, 1, 200))))
     bioImageFile = None
     imageWindow = None

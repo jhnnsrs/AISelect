@@ -260,6 +260,9 @@ class RoiParser(object):
         xstart = overindices.min()
         ystart = overindices.max()
 
+        if environment.saveVolumetricInfo is True:
+            height, ystart, yend = RoiParser.calculateVolumetricData(roi,xstart,environment)
+
         data.aisstart = xstart
         data.aisend = ystart
         data.aislength = ystart - xstart
@@ -269,6 +272,28 @@ class RoiParser(object):
 
 
         return data
+
+    @staticmethod
+    def calculateVolumetricData(roi,xstart,environment):
+
+        image = roi.roiimage
+        threshold = environment.threshold
+        c = environment.aischannel
+
+        averages = np.max(image, axis=0)
+        intensity = averages / averages.max(axis=0)
+
+
+        overindices = (intensity[:, c] > threshold).nonzero()[0]
+        if (len(overindices) < 2):
+            overindices = np.array([0, data.piclength])  # TODO: needs to be handled
+            data.flags.append("Error")
+            print("ERROR ON AIS")
+
+        data.flags = data.flags + Global.flags
+        xstart = overindices.min()
+        ystart = overindices.max()
+
 
 
 

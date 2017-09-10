@@ -166,6 +166,7 @@ class BioImageFile(object):
         return self.meta.sizez
 
     def getSlicedStack(self,start,end, t=0):
+        print("Slized Stack",start,end)
         file = self.getFile()
         return file[:,:,:,start:end,t]
 
@@ -175,7 +176,9 @@ class BioImageFile(object):
         assert (self.ran is True), "BioimageFile has no been instatiated"
 
         self.file = np.zeros((self.meta.sizex, self.meta.sizey, self.meta.sizec, self.meta.sizez, self.meta.sizet))
-
+        print("Channels:", self.meta.sizec)
+        print("T-Size:",self.meta.sizet)
+        print("Z-Size:",self.meta.sizez)
         # Debug settings
         tsize = self.meta.sizet if not self.debug else 20
         print(tsize)
@@ -186,7 +189,7 @@ class BioImageFile(object):
 
                         # bioformats appears to swap axes for tif images and read all three channels at a time for RGB
                         im1 = reader.read(c=c, z=z, t=t, series=self.series, rescale=True, channel_names=None)
-
+                        print(im1.shape)
                         if im1.ndim == 3:
                             if (im1.shape[2] == 3):
                                 # Three channels are red
@@ -195,11 +198,11 @@ class BioImageFile(object):
                                 im2 = im1
                         else:
                             im2 = im1
-                        if (self.meta.sizex == im2.shape[1]) and (self.meta.sizey == im2.shape[0]):
+                        if (self.meta.sizex == im2.shape[1]) and (self.meta.sizey == im2.shape[0]) and not self.meta.sizex == self.meta.sizey:
                             # x and y are swapped
                             #logging.warning("Image might be transposed. Not Swapping")
                             #im3 = im2.transpose()
-                            im3 = im2
+                            im3 = im2.transpose()
                         else:
                             im3 = im2
 
@@ -219,9 +222,12 @@ class BioImageFile(object):
             map = map[:self.file.shape[2]]
             print("Less then 3 Channels, try different mapping")
 
+            emptyfile = np.zeros((self.file.shape[0], self.file.shape[1], 3, self.file.shape[3], self.file.shape[4]))
+
         for index, mappedchannel in enumerate(map):
             emptyfile[:,:,index,:,:] = self.file[:,:,mappedchannel,:,:]
 
+        print("Returned colormap shape", emptyfile.shape)
         return emptyfile
 
     def checkDimensions(self,file):

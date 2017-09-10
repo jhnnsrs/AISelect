@@ -118,7 +118,7 @@ class Handler(object):
 
         Global.filename = Global.meta.getFileName
         Global.startstack = 0
-        Global.endstack = Global.meta.sizez - 1
+        Global.endstack = Global.meta.sizez
 
 
     def roiAddedToList(self,roi):

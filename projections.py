@@ -15,6 +15,10 @@ def void(stack):
 
 
 def maxisp(stack):
+    print(stack.shape)
+    if stack.shape[3] == 0:
+        print("Already Projected")
+        return tonumpy(stack[:,:,:])
     maxproj = np.nanmax(stack, axis=3)
     print("MAXISP", maxproj.shape)
     return tonumpy(maxproj)
