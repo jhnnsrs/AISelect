@@ -9,6 +9,7 @@ from randcolours import rand_cmap
 
 class Global(object):
 
+    overlapthreshold = 0.4
     flagsSeperator = "; "
     selectiveChannel = 0
     colorMap = [0, 1, 2]

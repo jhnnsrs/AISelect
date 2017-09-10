@@ -20,6 +20,21 @@ def channel(image):
 
     return images
 
+
+def overlap(image):
+    max = np.max(image)
+    threshold = Global.overlapthreshold * max
+    overch1 = [1 if i == True else 0 for i in (image[:,:, 0] > threshold).flatten()]
+    overch2 = [1 if i == True else 0 for i in (image[:,:, 1] > threshold).flatten()]
+
+    both = np.add(overch2,overch1)
+    newimage = [max if i == 2 else 0 for i in both]
+    newimage = np.array(newimage).reshape((image.shape[0],image.shape[1]))
+
+    #imager = np.zeros(image.shape, np.uint8)
+
+    return newimage
+
 def canny(image):
     cvimage = image[:, :, Global.selectiveChannel]
     blured = cv2.GaussianBlur(cvimage, (3, 3), 3)

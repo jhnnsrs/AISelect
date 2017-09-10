@@ -52,6 +52,7 @@ class PostProcessSelector(CallbackSelector):
         self.newItem("Selective Color",postprocess.channel)
         self.newItem("Selective Channel",postprocess.color)
         self.newItem("Canny",postprocess.canny)
+        self.newItem("Overlap",postprocess.overlap)
 
     def setCallback(self,callback):
         Global.postprocess = callback
