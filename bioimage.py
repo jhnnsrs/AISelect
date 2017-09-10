@@ -215,16 +215,16 @@ class BioImageFile(object):
 
     def colorMap(self,map):
 
-        emptyfile = np.zeros(self.file.shape)
+        emptyfile = np.zeros((self.file.shape[0], self.file.shape[1], 3, self.file.shape[3], self.file.shape[4]))
 
         if len(map) != self.file.shape[2]:
-            map = map[:self.file.shape[2]]
             print("Less then 3 Channels, try different mapping")
-
+            map = map[:self.file.shape[2]]
             emptyfile = np.zeros((self.file.shape[0], self.file.shape[1], 3, self.file.shape[3], self.file.shape[4]))
 
         for index, mappedchannel in enumerate(map):
-            if index >= (self.file.shape[2] - 1): break
+            print( "To", index, "Mapped", mappedchannel)
+            if mappedchannel == self.file.shape[2]: break
             emptyfile[:,:,index,:,:] = self.file[:,:,mappedchannel,:,:]
 
         print("Returned colormap shape", emptyfile.shape)
