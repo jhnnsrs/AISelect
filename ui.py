@@ -456,6 +456,7 @@ class SettingsWindow(QWidget):
         ws['D1'] = "Picture Length"
         ws['E1'] = "Vector Length"
         ws['F1'] = "Loss"
+        ws['G1'] = "Flags"
 
         for data in Global.datalist:
                 face_file_name = "AIS " + "{0:0=3}".format(data.index) + ".jpg"
@@ -463,7 +464,8 @@ class SettingsWindow(QWidget):
                 physicallength = data.aisphysicallength
                 picturelength = data.piclength
                 vectorlength = data.vectorlength
-                ws.append([face_file_name, pixellength, physicallength,picturelength,vectorlength,picturelength/vectorlength])
+                flags = data.flags
+                ws.append([face_file_name, pixellength, physicallength,picturelength,vectorlength,picturelength/vectorlength,flags])
 
 
         # Save the file
