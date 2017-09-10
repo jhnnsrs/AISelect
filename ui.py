@@ -491,7 +491,7 @@ class SettingsWindow(QWidget):
                 physicallength = data.aisphysicallength
                 picturelength = data.piclength
                 vectorlength = data.vectorlength
-                flags = data.flags
+                flags = ",".join(data.flags)
                 ws.append([face_file_name, pixellength, physicallength,picturelength,vectorlength,picturelength/vectorlength,flags])
 
 
