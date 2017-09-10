@@ -159,8 +159,11 @@ class Handler(object):
     def listsUpdated(self):
         Global.roiListWindow.listUpdated()
 
+    def setRoiFlag(self,dataindex,flags):
+        Global.datalist[dataindex].flags = flags
+
     def showData(self,dataindex):
-        Global.roiWindow.showData(Global.datalist[dataindex])
+        Global.roiWindow.showData(Global.datalist[dataindex],dataindex)
 
     def addRoi(self,roi: Roi):
         Global.roilist.append(roi)
@@ -277,7 +280,7 @@ class SettingsWindow(QWidget):
 
     def changeFlags(self):
         text = self.textbox.text()
-        flags = text.split(";")
+        flags = text.split(Global.flagsSeperator)
         Global.flags = flags
 
     def addStageLayout(self):
@@ -638,9 +641,12 @@ class RoiWindow(QWidget):
         Global.roiWindow = self
         self.layout = QVBoxLayout(self)
         self.setWindowTitle("Graph and Flourescence")
-
+        self.roiindex = 0
         self.fig = plt.figure()
         self.canvas = FigureCanvas(self.fig)
+        self.flags = QLineEdit()
+        self.flagsSave = QPushButton("Save")
+        self.flagsSave.clicked.connect(self.flagsChanged)
         self.dataCanvas = self.fig.add_subplot(212)
         self.pictureCanvas = self.fig.add_subplot(211)
 
@@ -649,13 +655,18 @@ class RoiWindow(QWidget):
 
         self.setUI()
 
-    def showData(self,data: AcquiredData):
+    def flagsChanged(self):
+        flags = self.flags.text().split(Global.flagsSeperator)
+        Global.handler.setRoiFlag(self.roiindex,flags)
+        pass
+
+    def showData(self,data: AcquiredData,index):
 
         self.pictureCanvas.imshow(data.roiimage)
 
         self.dataCanvas.clear()
         self.dataCanvas.set_xlim([0, data.piclength])
-
+        self.roiindex = index
 
         self.dataCanvas.plot(data.intensitycurves[:, data.b4channel])
 
@@ -665,6 +676,7 @@ class RoiWindow(QWidget):
 
         self.dataCanvas.plot([data.aisstart,data.aisend], [data.threshold, data.threshold], 'k-', lw=2)
         self.dataCanvas.text(data.aisstart + data.aislength/2 - 10, data.threshold + 0.1, label)
+        self.flags.setText(Global.flagsSeperator.join(data.flags))
 
 
         self.updateUI()
@@ -689,8 +701,17 @@ class RoiWindow(QWidget):
 
 
     def setUI(self):
+        self.flagsLabel = QLabel("Flags")
+        self.settingBox = QGroupBox("ROI Meta")
+        self.settingLayout = QGridLayout()
+        self.settingLayout.addWidget(self.flags, 0, 1)
+        self.settingLayout.addWidget(self.flagsLabel, 0, 0)
+        self.settingLayout.addWidget(self.flagsSave,0,2)
+        self.settingBox.setLayout(self.settingLayout)
 
         self.layout.addWidget(self.canvas)
+        self.layout.addWidget(self.settingBox)
+
         self.setLayout(self.layout)
 
 

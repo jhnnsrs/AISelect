@@ -224,8 +224,10 @@ class BioImageFile(object):
 
         for index, mappedchannel in enumerate(map):
             print( "To", index, "Mapped", mappedchannel)
-            if mappedchannel == self.file.shape[2]: break
-            emptyfile[:,:,index,:,:] = self.file[:,:,mappedchannel,:,:]
+            if mappedchannel >= self.file.shape[2]:
+                emptyfile[:, :, index, :, :] = np.zeros((self.file.shape[0], self.file.shape[1], self.file.shape[3], self.file.shape[4]))
+            else:
+                emptyfile[:,:,index,:,:] = self.file[:,:,mappedchannel,:,:]
 
         print("Returned colormap shape", emptyfile.shape)
         return emptyfile
