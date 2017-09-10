@@ -189,7 +189,6 @@ class BioImageFile(object):
 
                         # bioformats appears to swap axes for tif images and read all three channels at a time for RGB
                         im1 = reader.read(c=c, z=z, t=t, series=self.series, rescale=True, channel_names=None)
-                        print(im1.shape)
                         if im1.ndim == 3:
                             if (im1.shape[2] == 3):
                                 # Three channels are red
