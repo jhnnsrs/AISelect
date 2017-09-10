@@ -9,6 +9,7 @@ from randcolours import rand_cmap
 
 class Global(object):
 
+    selectiveChannel = 0
     colorMap = [0, 1, 2]
     colorReadableMap = ["R","G","B"]
     availableMaps = [[0,1,2],[0,2,1],[1,2,0],[1,0,2],[2,0,1],[2,1,0]]

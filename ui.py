@@ -49,6 +49,9 @@ class PostProcessSelector(CallbackSelector):
         self.newItem("Void",postprocess.void)
         self.newItem("Sobel", postprocess.sobel)
         self.newItem("Laplace (K=1)",postprocess.laplace)
+        self.newItem("Selective Color",postprocess.channel)
+        self.newItem("Selective Channel",postprocess.color)
+        self.newItem("Canny",postprocess.canny)
 
     def setCallback(self,callback):
         Global.postprocess = callback
@@ -165,6 +168,20 @@ class Handler(object):
 
     def setMetaWindow(self):
         Global.metaWindow.updateUI()
+
+class ChannelSelector(CallbackSelector):
+    def itemsToAdd(self):
+        channelnames = Global.meta.getChannelNames()
+        print(channelnames)
+        for index, i in enumerate(channelnames):
+            self.newItem(i, index)
+
+    def selectItem(self,index):
+        self.setCurrentIndex(index)
+
+    def setCallback(self,callback):
+        Global.selectiveChannel = callback
+        Global.handler.loadImage()
 
 
 class B4Selector(CallbackSelector):
@@ -361,7 +378,7 @@ class SettingsWindow(QWidget):
 
         face_file_name = "STAGE_" + data +  "_stage-{0}-{1}".format(Global.startstack,Global.endstack) + ".jpg"
         path = os.path.join(dirname, face_file_name)
-        plt.imsave(path, Global.projected,  dpi=600)
+        plt.imsave(path, Global.projected,  dpi=200)
         print("Snapshot saved")
 
 
@@ -378,7 +395,7 @@ class SettingsWindow(QWidget):
         face_file_name = "AIS-STAGE_" + data + "_stage-{0}-{1}".format(Global.startstack, Global.endstack) + ".jpg"
         path = os.path.join(dirname, face_file_name)
 
-        Global.imageWindow.fig.savefig(path, dpi=600)
+        Global.imageWindow.fig.savefig(path, dpi=200)
         print("Snapshot saved")
 
 
@@ -390,21 +407,30 @@ class SettingsWindow(QWidget):
         if self.selectB4 == None:
             self.selectB4 = B4Selector()
             self.b4Label = QLabel("AIS-Channel")
+            self.selectiveLabel = QLabel("Selective-Channel")
+            self.selectC = ChannelSelector()
 
             self.aisBox = QGroupBox("AIS-Settings")
             self.aissettingLayout = QGridLayout()
 
             self.aissettingLayout.addWidget(self.b4Label,0,0)
             self.aissettingLayout.addWidget(self.selectB4,0,1)
+            self.aissettingLayout.addWidget(self.selectiveLabel,1,0)
+            self.aissettingLayout.addWidget(self.selectC,1,1)
 
             self.thresholdLabel = QLabel("Threshold")
+            self.thresholdEdit = QLineEdit()
+            self.thresholdEdit.setDisabled(True)
             self.minimumslider = QSlider(Qt.Horizontal)
             self.minimumslider.setMinimum(0)
             self.minimumslider.setMaximum(100)
             self.minimumslider.setValue(20)
             self.minimumslider.valueChanged.connect(self.thresholdchanged)
-            self.aissettingLayout.addWidget(self.thresholdLabel,1,0)
-            self.aissettingLayout.addWidget(self.minimumslider, 1, 1)
+            self.aissettingLayout.addWidget(self.thresholdLabel,2,0)
+            self.aissettingLayout.addWidget(self.minimumslider, 2, 1)
+            self.aissettingLayout.addWidget(self.minimumslider, 2, 1)
+            self.aissettingLayout.addWidget(self.thresholdEdit, 2, 2)
+
 
 
             self.aisBox.setLayout(self.aissettingLayout)
@@ -416,6 +442,7 @@ class SettingsWindow(QWidget):
 
     def thresholdchanged(self,value):
         Global.threshold = float(value/100)
+        self.thresholdEdit.setText((str(Global.threshold)))
         print(Global.threshold)
 
     def done(self):
