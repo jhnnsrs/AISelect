@@ -324,6 +324,7 @@ class SettingsWindow(QWidget):
 
         self.stageBox.setLayout(self.stageLayout)
         self.layout.addWidget(self.stageBox)
+        self.layout.addStretch()
 
         self.setLayout(self.layout)
 
